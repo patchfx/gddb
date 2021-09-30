@@ -1,47 +1,47 @@
 //! > NOTE: This project is not affiliated with the Python [TinyDB](https://tinydb.readthedocs.io/en/latest/),
 //! accidental naming error from when this project was started. See
 //! [renaming](https://github.com/scOwez/tinydb/issues/3) for updates
-//! 
+//!
 //! TinyDB or `tinydb` is a small-footprint, superfast database designed to be
 //! used in-memory and easily dumped/retrieved from a file when it's time to save
 //! ✨
-//! 
+//!
 //! This database aims to provide an easy frontend to an efficiant in-memory
 //! database (that can also be dumped to a file). It purposefully disallows
 //! duplicate items to be sorted due to constraints with hash tables.
-//! 
+//!
 //! ## Example 🚀
-//! 
+//!
 //! A simple example of adding a structure then querying for it:
-//! 
+//!
 //! ```rust
 //! use serde::{Serialize, Deserialize};
 //! use tinydb::Database;
-//! 
+//!
 //! #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone)]
 //! struct ExampleStruct {
 //!     my_age: i32
 //! }
-//! 
+//!
 //! fn main() {
 //!     let my_struct = ExampleStruct { my_age: 329 };
 //!     let mut my_db = Database::new("query_test", None, false);
-//! 
+//!
 //!     my_db.add_item(my_struct.clone());
-//! 
+//!
 //!     let results = my_db.query_item(|s: &ExampleStruct| &s.my_age, 329);
-//! 
+//!
 //!     assert_eq!(results.unwrap(), &my_struct);
 //! }
 //! ```
-//! 
+//!
 //! # Installation
-//! 
+//!
 //! Simply add the following to your `Cargo.toml` file:
-//! 
+//!
 //! ```toml
 //! [dependencies]
-//! tinydb = "1"
+//! tinydb = "1.0.0"
 //! ```
 //! # Implementation notes
 //!
@@ -118,7 +118,11 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///
     /// - To add a first item, use [Database::add_item].
     /// - If you'd like to load a dumped database, use [Database::from].
-    pub fn new(label: impl Into<String>, save_path: impl Into<Option<PathBuf>>, strict_dupes: bool) -> Self {
+    pub fn new(
+        label: impl Into<String>,
+        save_path: impl Into<Option<PathBuf>>,
+        strict_dupes: bool,
+    ) -> Self {
         Database {
             label: label.into(),
             save_path: save_path.into(),
@@ -210,9 +214,12 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     let db_new: Database<ExampleStruct> = Database::auto_from(db_new_path, false).unwrap(); // automatically create new as "xyz" doesn't exist
     /// }
     /// ```
-    pub fn auto_from(path: impl Into<PathBuf>, strict_dupes: bool) -> Result<Self, error::DatabaseError> {
+    pub fn auto_from(
+        path: impl Into<PathBuf>,
+        strict_dupes: bool,
+    ) -> Result<Self, error::DatabaseError> {
         let path_into = path.into();
-        
+
         if path_into.exists() {
             Database::from(path_into)
         } else {
@@ -365,6 +372,34 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// ```
     pub fn contains(&self, query: &T) -> bool {
         self.items.contains(query)
+    }
+
+    /// Returns the number of database entries
+    /// method will return i32.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use tinydb::Database;
+    /// use serde::{Serialize, Deserialize};
+    ///
+    /// #[derive(Hash, Eq, PartialEq, Serialize, Deserialize, Copy, Clone)]
+    /// struct ExampleStruct {
+    ///     item: i32
+    /// }
+    ///
+    /// fn main() {
+    ///     let exp_struct = ExampleStruct { item: 4942 };
+    ///     let mut db = Database::new("Contains example", None, false);
+    ///
+    ///     db.add_item(exp_struct.clone());
+    ///
+    ///     assert_eq!(db.len(), 1);
+    /// }
+    /// ```
+    pub fn len(&self) -> i32 {
+        self.items.len() as i32
     }
 
     /// Opens the path given in [Database::save_path] (or auto-generates a path).
@@ -552,5 +587,24 @@ mod tests {
 
         let new_db_path = PathBuf::from("nonexistant.tinydb");
         let _net_db: Database<DemoStruct> = Database::auto_from(new_db_path, false).unwrap();
+    }
+
+    /// Tests [Database::len] returns the number of database entries
+    #[test]
+    fn len() {
+        let mut db: Database<DemoStruct> = Database::new(
+            String::from("Query test"),
+            Some(PathBuf::from("test.tinydb")),
+            true,
+        );
+
+        let demo_mock = DemoStruct {
+            name: String::from("Xander"),
+            age: 33,
+        };
+
+        db.add_item(demo_mock.clone()).unwrap();
+
+        assert_eq!(db.len(), 1);
     }
 }
