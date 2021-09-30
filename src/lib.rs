@@ -345,6 +345,61 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
         Err(error::DatabaseError::ItemNotFound)
     }
 
+    /// Query the database for all matching items.
+    ///
+    /// # Syntax
+    ///
+    /// ```none
+    /// self.query(|[p]| [p].[field], [query]);
+    /// ```
+    ///
+    /// - `[p]` The closure (Will be whatever the database currently is saving as a schema).
+    /// - `[field]` The exact field of `p`. If the database doesn't contain structures, don't add the `.[field]`.
+    /// - `[query]` Item to query for. This is a generic and can be of any reasonable type.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use serde::{Serialize, Deserialize};
+    /// use tinydb::Database;
+    ///
+    /// #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone)]
+    /// struct ExampleStruct {
+    ///     uuid: String,
+    ///     age: i32,
+    /// }
+    ///
+    /// fn main() {
+    ///     let mut my_db = Database::new("query_test", None, false);
+    ///
+    ///     my_db.add_item(ExampleStruct { uuid: "test1".into(), age: 20 });
+    ///     my_db.add_item(ExampleStruct { uuid: "test2".into(), age: 20 });
+    ///     my_db.add_item(ExampleStruct { uuid: "test3".into(), age: 18 });
+    ///
+    ///     let results = my_db.query(|s: &ExampleStruct| &s.age, 20);
+    ///
+    ///     assert_eq!(results.unwrap().len(), 2);
+    /// }
+    /// ```
+    pub fn query<Q: PartialEq, V: Fn(&T) -> &Q>(
+        &self,
+        value: V,
+        query: Q,
+    ) -> Result<Vec<&T>, error::DatabaseError> {
+        let mut items: Vec<&T> = vec![];
+        for item in self.items.iter() {
+            if value(item) == &query {
+                items.push(item);
+            }
+        }
+
+        if items.len() > 0 {
+            return Ok(items);
+        }
+
+        Err(error::DatabaseError::ItemNotFound)
+    }
+
     /// Searches the database for a specific value. If it does not exist, this
     /// method will return [error::DatabaseError::ItemNotFound].
     ///
@@ -549,13 +604,62 @@ mod tests {
         ); // Finds "Cat" by searching [DemoStruct::name]
     }
 
+    /// Tests [Database::query]
+    #[test]
+    fn query_db() {
+        let mut my_db = Database::new(
+            String::from("Query test"),
+            Some(PathBuf::from("test.tinydb")),
+            false,
+        );
+
+        my_db
+            .add_item(DemoStruct {
+                name: String::from("Rimmer"),
+                age: 5,
+            })
+            .unwrap();
+        my_db
+            .add_item(DemoStruct {
+                name: String::from("Cat"),
+                age: 10,
+            })
+            .unwrap();
+        my_db
+            .add_item(DemoStruct {
+                name: String::from("Kryten"),
+                age: 3000,
+            })
+            .unwrap();
+        my_db
+            .add_item(DemoStruct {
+                name: String::from("Lister"),
+                age: 62,
+            })
+            .unwrap();
+
+        my_db
+            .add_item(DemoStruct {
+                name: String::from("Lister"),
+                age: 64,
+            })
+            .unwrap();
+
+        assert_eq!(
+            my_db
+                .query(|f| &f.name, String::from("Lister"))
+                .unwrap()
+                .len(),
+            2
+        ); // Finds "Lister" by searching [DemoStruct::name]
+    }
+
     /// Tests a [Database::from] method call
     #[test]
     fn db_from() -> Result<(), error::DatabaseError> {
-        db_dump()?; // ensure database was dumped
-
         let my_db: Database<DemoStruct> = Database::from(PathBuf::from("test.tinydb"))?;
 
+        my_db.dump_db()?;
         assert_eq!(my_db.label, String::from("Dumping test"));
 
         Ok(())
