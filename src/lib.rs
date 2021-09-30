@@ -61,6 +61,7 @@
 //! | Create database                         | [Database::new]         |
 //! | Create database from file               | [Database::from]        |
 //! | Load database or create if non-existant | [Database::auto_from]   |
+//! | Query all matching items                | [Database::query]       |
 //! | Query for item                          | [Database::query_item]  |
 //! | Contains specific item                  | [Database::contains]    |
 //! | Update/replace item                     | [Database::update_item] |
@@ -657,10 +658,23 @@ mod tests {
     /// Tests a [Database::from] method call
     #[test]
     fn db_from() -> Result<(), error::DatabaseError> {
-        let my_db: Database<DemoStruct> = Database::from(PathBuf::from("test.tinydb"))?;
+        let mut my_db = Database::new(
+            String::from("Dumping test"),
+            Some(PathBuf::from("test.tinydb")),
+            false,
+        );
+
+        let demo_mock = DemoStruct {
+            name: String::from("Xander"),
+            age: 33,
+        };
+
+        my_db.add_item(demo_mock.clone()).unwrap();
 
         my_db.dump_db()?;
-        assert_eq!(my_db.label, String::from("Dumping test"));
+
+        let db: Database<DemoStruct> = Database::from(PathBuf::from("test.tinydb"))?;
+        assert_eq!(db.label, String::from("Dumping test"));
 
         Ok(())
     }
