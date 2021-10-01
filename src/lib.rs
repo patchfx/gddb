@@ -27,7 +27,7 @@
 //!     let my_struct = ExampleStruct { my_age: 329 };
 //!     let mut my_db = Database::new("query_test", None, false);
 //!
-//!     my_db.add_item(my_struct.clone());
+//!     my_db.create(my_struct.clone());
 //!
 //!     let results = my_db.query_item(|s: &ExampleStruct| &s.my_age, 329);
 //!
@@ -73,8 +73,8 @@
     html_favicon_url = "https://github.com/Owez/tinydb/raw/master/logo.png"
 )]
 
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use hashbrown::HashSet;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fs::File;
 use std::hash;
 use std::io::prelude::*;
@@ -117,7 +117,7 @@ pub struct Database<T: hash::Hash + Eq> {
 impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// Creates a new database instance from given parameters.
     ///
-    /// - To add a first item, use [Database::add_item].
+    /// - To add a first item, use [Database::create].
     /// - If you'd like to load a dumped database, use [Database::from].
     pub fn new(
         label: impl Into<String>,
@@ -153,7 +153,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// /// Makes a small testing database.
     /// fn make_db() {
     ///     let mut test_db = Database::new("test", None, false);
-    ///     test_db.add_item(ExampleStruct { data: 34 });
+    ///     test_db.create(ExampleStruct { data: 34 });
     ///     test_db.dump_db();
     /// }
     ///
@@ -241,7 +241,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// If this is the first item added to the database, please ensure it's the
     /// only type you'd like to add. Due to generics, the first item you add
     /// will be set as the type to use (unless removed).
-    pub fn add_item(&mut self, item: T) -> Result<(), error::DatabaseError> {
+    pub fn create(&mut self, item: T) -> Result<(), error::DatabaseError> {
         if self.strict_dupes {
             if self.items.contains(&item) {
                 return Err(error::DatabaseError::DupeFound);
@@ -259,7 +259,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// values individually if needed.
     pub fn update_item(&mut self, item: &T, new: T) -> Result<(), error::DatabaseError> {
         self.remove_item(item)?;
-        self.add_item(new)?;
+        self.create(new)?;
 
         Ok(())
     }
@@ -325,7 +325,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     let my_struct = ExampleStruct { my_age: 329 };
     ///     let mut my_db = Database::new("query_test", None, false);
     ///
-    ///     my_db.add_item(my_struct.clone());
+    ///     my_db.create(my_struct.clone());
     ///
     ///     let results = my_db.query_item(|s: &ExampleStruct| &s.my_age, 329);
     ///
@@ -373,9 +373,9 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// fn main() {
     ///     let mut my_db = Database::new("query_test", None, false);
     ///
-    ///     my_db.add_item(ExampleStruct { uuid: "test1".into(), age: 20 });
-    ///     my_db.add_item(ExampleStruct { uuid: "test2".into(), age: 20 });
-    ///     my_db.add_item(ExampleStruct { uuid: "test3".into(), age: 18 });
+    ///     my_db.create(ExampleStruct { uuid: "test1".into(), age: 20 });
+    ///     my_db.create(ExampleStruct { uuid: "test2".into(), age: 20 });
+    ///     my_db.create(ExampleStruct { uuid: "test3".into(), age: 18 });
     ///
     ///     let results = my_db.query(|s: &ExampleStruct| &s.age, 20);
     ///
@@ -421,7 +421,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     let exp_struct = ExampleStruct { item: 4942 };
     ///     let mut db = Database::new("Contains example", None, false);
     ///
-    ///     db.add_item(exp_struct.clone());
+    ///     db.create(exp_struct.clone());
     ///
     ///     assert_eq!(db.contains(&exp_struct), true);
     /// }
@@ -449,7 +449,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     let exp_struct = ExampleStruct { item: 4942 };
     ///     let mut db = Database::new("Contains example", None, false);
     ///
-    ///     db.add_item(exp_struct.clone());
+    ///     db.create(exp_struct.clone());
     ///
     ///     assert_eq!(db.len(), 1);
     /// }
@@ -510,7 +510,7 @@ mod tests {
     fn item_add() -> Result<(), error::DatabaseError> {
         let mut my_db = Database::new("Adding test", None, true);
 
-        my_db.add_item(DemoStruct {
+        my_db.create(DemoStruct {
             name: String::from("John"),
             age: 16,
         })?;
@@ -528,7 +528,7 @@ mod tests {
             age: 33,
         };
 
-        my_db.add_item(testing_struct.clone())?;
+        my_db.create(testing_struct.clone())?;
         my_db.remove_item(&testing_struct)?;
 
         Ok(())
@@ -542,11 +542,11 @@ mod tests {
             true,
         );
 
-        my_db.add_item(DemoStruct {
+        my_db.create(DemoStruct {
             name: String::from("Xander"),
             age: 33,
         })?;
-        my_db.add_item(DemoStruct {
+        my_db.create(DemoStruct {
             name: String::from("John"),
             age: 54,
         })?;
@@ -565,25 +565,25 @@ mod tests {
         );
 
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Rimmer"),
                 age: 5,
             })
             .unwrap();
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Cat"),
                 age: 10,
             })
             .unwrap();
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Kryten"),
                 age: 3000,
             })
             .unwrap();
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Lister"),
                 age: 62,
             })
@@ -615,32 +615,32 @@ mod tests {
         );
 
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Rimmer"),
                 age: 5,
             })
             .unwrap();
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Cat"),
                 age: 10,
             })
             .unwrap();
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Kryten"),
                 age: 3000,
             })
             .unwrap();
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Lister"),
                 age: 62,
             })
             .unwrap();
 
         my_db
-            .add_item(DemoStruct {
+            .create(DemoStruct {
                 name: String::from("Lister"),
                 age: 64,
             })
@@ -669,7 +669,7 @@ mod tests {
             age: 33,
         };
 
-        my_db.add_item(demo_mock.clone()).unwrap();
+        my_db.create(demo_mock.clone()).unwrap();
 
         my_db.dump_db()?;
 
@@ -689,7 +689,7 @@ mod tests {
         };
 
         let mut db = Database::new(String::from("Contains example"), None, false);
-        db.add_item(exp_struct.clone()).unwrap();
+        db.create(exp_struct.clone()).unwrap();
         assert_eq!(db.contains(&exp_struct), true);
     }
 
@@ -721,7 +721,7 @@ mod tests {
             age: 33,
         };
 
-        db.add_item(demo_mock.clone()).unwrap();
+        db.create(demo_mock.clone()).unwrap();
 
         assert_eq!(db.len(), 1);
     }
