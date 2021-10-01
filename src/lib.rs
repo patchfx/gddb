@@ -65,7 +65,7 @@
 //! | Query for item                          | [Database::query_item]  |
 //! | Contains specific item                  | [Database::contains]    |
 //! | Update/replace item                     | [Database::update] |
-//! | Delete item                             | [Database::remove_item] |
+//! | Delete item                             | [Database::destroy] |
 //! | Dump database                           | [Database::dump_db]     |
 
 #![doc(
@@ -258,7 +258,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// [Database::query_item] can be used in conjunction to find and replace
     /// values individually if needed.
     pub fn update(&mut self, item: &T, new: T) -> Result<(), error::DatabaseError> {
-        self.remove_item(item)?;
+        self.destroy(item)?;
         self.create(new)?;
 
         Ok(())
@@ -273,7 +273,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///
     /// Will return [error::DatabaseError::ItemNotFound] if the item that is attempting
     /// to be deleted was not found.
-    pub fn remove_item(&mut self, item: &T) -> Result<(), error::DatabaseError> {
+    pub fn destroy(&mut self, item: &T) -> Result<(), error::DatabaseError> {
         if self.items.remove(item) {
             Ok(())
         } else {
@@ -529,7 +529,7 @@ mod tests {
         };
 
         my_db.create(testing_struct.clone())?;
-        my_db.remove_item(&testing_struct)?;
+        my_db.destroy(&testing_struct)?;
 
         Ok(())
     }
