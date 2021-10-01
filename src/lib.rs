@@ -74,7 +74,7 @@
 )]
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::collections::HashSet;
+use hashbrown::HashSet;
 use std::fs::File;
 use std::hash;
 use std::io::prelude::*;
