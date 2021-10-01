@@ -64,7 +64,7 @@
 //! | Query all matching items                | [Database::query]       |
 //! | Query for item                          | [Database::query_item]  |
 //! | Contains specific item                  | [Database::contains]    |
-//! | Update/replace item                     | [Database::update_item] |
+//! | Update/replace item                     | [Database::update] |
 //! | Delete item                             | [Database::remove_item] |
 //! | Dump database                           | [Database::dump_db]     |
 
@@ -257,7 +257,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///
     /// [Database::query_item] can be used in conjunction to find and replace
     /// values individually if needed.
-    pub fn update_item(&mut self, item: &T, new: T) -> Result<(), error::DatabaseError> {
+    pub fn update(&mut self, item: &T, new: T) -> Result<(), error::DatabaseError> {
         self.remove_item(item)?;
         self.create(new)?;
 
@@ -266,7 +266,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
 
     /// Removes an item from the database.
     ///
-    /// See [Database::update_item] if you'd like to update/replace an item easily,
+    /// See [Database::update] if you'd like to update/replace an item easily,
     /// rather than individually deleting and adding.
     ///
     /// # Errors
