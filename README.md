@@ -1,44 +1,65 @@
-# TinyDB
+# GDDB
 
-> NOTE: This project is not affiliated with the Python [TinyDB](https://tinydb.readthedocs.io/en/latest/), accidental naming error from when this project was started. See [renaming](https://github.com/scOwez/tinydb/issues/3) for updates
+GDDB is a superfast in-memory database designed for use in Godot.
 
-TinyDB or `tinydb` is a small-footprint, superfast database designed to be used in-memory and easily dumped/retrieved from a file when it's time to save ✨
+This database aims to provide an easy frontend to an efficient in-memory database, that can be saved and reloaded.
 
-This database aims to provide an easy frontend to an efficiant in-memory database (that can also be dumped to a file). It purposefully disallows duplicate items to be sorted due to constraints with hash tables.
+GDDB saves a Godot dictionary and provides an interface to create, update, retrieve (either single results or all items matching the search) and destroy records.
 
-- [Documentation](https://docs.rs/tinydb)
-- [Crates.io](https://crates.io/crates/tinydb)
+GDDB started as a fork of [TinyDB](https://github.com/Owez/tinydb) with added functionality and a Godot wrapper.
 
-## Example 🚀
+- [Documentation](https://docs.rs/gddb)
+- [Crates.io](https://crates.io/crates/gddb)
 
-A simple example of adding a structure then querying for it:
+## Rust Example 🚀
+
+An example of utilising GDDB within your Rust library.
 
 ```rust
 use serde::{Serialize, Deserialize};
-use tinydb::Database;
+use gddb::Database;
 
 #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize, Clone)]
-struct ExampleStruct {
-    my_age: i32
+struct PlayerStruct {
+    name: String
 }
 
 fn main() {
-    let my_struct = ExampleStruct { my_age: 329 };
-    let mut my_db = Database::new("query_test", None, false);
+    let player = PlayerStruct { name: "Joe Bloggs".into() };
+    let mut db = Database::new("GAME", None, false);
 
-    my_db.create(my_struct.clone());
+    db.create(player.clone());
 
-    let results = my_db.query_item(|s: &ExampleStruct| &s.my_age, 329);
+    let results = db.find(|s: &PlayerStruct| &s.name, "Joe Bloggs".into());
 
-    assert_eq!(results.unwrap(), &my_struct);
+    assert_eq!(results.unwrap(), &player);
 }
 ```
 
+## Godot Example
+
+- Copy the libgddb.(dll|so) to your Godot project
+- Create a new GDNativeLibrary and link to the lib 
+- Create a new GDNativeScript filed with a class name of 'Database'
+- Attach the GDNativeLibrary to the GDNativeScript
+- Autoload the GDNativeScript
+
+```gdscript
+extends Node
+
+func _ready():
+	var data = { "name": "Joe Bloggs" }
+	var player_uuid = Database.create("Player", data)
+	print(player_uuid)
+
+	var record = Database.find(player_uuid)
+	print(record.name)
+```
 ## Installation
 
 Simply add the following to your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-tinydb = "1"
+gddb = "0.1.0"
 ```

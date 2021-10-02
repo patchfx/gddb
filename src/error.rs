@@ -1,4 +1,4 @@
-//! Contains various items related to errors inside of TinyDB.
+//! Contains various items related to errors inside of GDDB.
 
 /// An error enum for the possible faliure states of the [crate::Database] structure.
 #[derive(Debug)]
