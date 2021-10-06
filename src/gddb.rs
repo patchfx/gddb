@@ -6,9 +6,21 @@ use uuid::Uuid;
 
 #[derive(Clone, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Record {
-    uuid: String,
-    model: String,
-    attributes: String,
+    pub uuid: String,
+    pub model: String,
+    pub attributes: String,
+}
+
+impl Record {
+    pub fn new(model: String) -> Self {
+        let uuid = Uuid::new_v4().to_string();
+
+        Self {
+            uuid: uuid.clone(),
+            model,
+            attributes: "".into(),
+        }
+    }
 }
 
 #[derive(NativeClass)]
@@ -27,12 +39,8 @@ impl GDDB {
     #[export]
     pub fn create(&mut self, _owner: &Node, model: String, attributes: Dictionary) -> String {
         let uuid = Uuid::new_v4().to_string();
-
-        let record = Record {
-            uuid: uuid.clone(),
-            model,
-            attributes: attributes.to_json().to_string(),
-        };
+        let mut record = Record::new(model);
+        record.attributes = attributes.to_json().to_string();
 
         self.storage.create(record).unwrap();
 

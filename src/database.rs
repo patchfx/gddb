@@ -38,11 +38,11 @@ pub struct Database<T: hash::Hash + Eq> {
     pub items: HashSet<T>,
 }
 
-impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
+impl<Record: hash::Hash + Eq + Serialize + DeserializeOwned>  Database<Record> {
     /// Creates a new database instance from given parameters.
     ///
     /// - To add a first item, use [Database::create].
-    /// - If you'd like to load a dumped database, use [Database::from].
+    /// - If you'd like to load a dumped database, use [Database::from]
     pub fn new(
         label: impl Into<String>,
         save_path: impl Into<Option<PathBuf>>,
@@ -56,6 +56,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
         }
     }
 
+
     /// Creates a database from a `.gddb` file.
     ///
     /// This retrives a dump file (saved database) from the path given and loads
@@ -68,16 +69,11 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// use serde::{Serialize, Deserialize};
     /// use std::path::PathBuf;
     ///
-    /// /// Small example structure to show.
-    /// #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-    /// struct ExampleStruct {
-    ///    data: i32
-    /// }
     ///
     /// /// Makes a small testing database.
     /// fn make_db() {
-    ///     let mut test_db = Database::new("test", None, false);
-    ///     test_db.create(ExampleStruct { data: 34 });
+    ///     let mut test_db: Database<Record> = Database::new("test", None, false);
+    ///     test_db.create(Record::new("Test".into()));
     ///     test_db.dump_db();
     /// }
     ///
@@ -85,21 +81,49 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// fn main() {
     ///     make_db();
     ///
-    ///     let got_db = Database::from(
+    ///     let db = Database::from(
     ///         PathBuf::from("test.gddb")
     ///     ).unwrap();
     ///
     ///     assert_eq!(
-    ///         got_db.find(|s: &ExampleStruct| &s.data, 34).unwrap(),
-    ///         &ExampleStruct { data: 34 }
+    ///         db.len(),
+    ///         1
     ///     ); // Check that the database still has added [ExampleStruct].
     /// }
     /// ```
     pub fn from(path: impl Into<PathBuf>) -> Result<Self, DatabaseError> {
         let stream = get_stream_from_path(path.into())?;
-        let decoded: Database<T> = bincode::deserialize(&stream[..]).unwrap();
+        let decoded: Database<Record> = bincode::deserialize(&stream[..]).unwrap();
 
         Ok(decoded)
+    }
+
+    /// Adds a new item to the in-memory database.
+    ///
+    /// If this is the first item added to the database, please ensure it's the
+    /// only type you'd like to add. Due to generics, the first item you add
+    /// will be set as the type to use (unless removed).
+    pub fn create(&mut self, item: Record) -> Result<(), DatabaseError> {
+        if self.strict_dupes {
+            if self.items.contains(&item) {
+                return Err(DatabaseError::DupeFound);
+            }
+        }
+
+        self.items.insert(item);
+        return Ok(());
+    }
+
+    /// Replaces an item inside of the database with another
+    /// item, used for updating/replacing items easily.
+    ///
+    /// [Database::update] can be used in conjunction to find and replace
+    /// values individually if needed.
+    pub fn update(&mut self, item: &Record, new: Record) -> Result<(), DatabaseError> {
+        self.destroy(item)?;
+        self.create(new)?;
+
+        Ok(())
     }
 
     /// Loads database from existant path or creates a new one if it doesn't already
@@ -123,20 +147,14 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     /// use std::path::PathBuf;
     /// use serde::{Serialize, Deserialize};
     ///
-    /// /// Small example structure to show.
-    /// #[derive(Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
-    /// struct ExampleStruct {
-    ///    data: i32
-    /// }
-    ///
     /// fn main() {
-    ///     let dummy_db: Database<ExampleStruct> = Database::new("cool", None, false); // create demo db for `db_from`
+    ///     let dummy_db: Database<Record> = Database::new("cool", None, false); // create demo db for `db_from`
     ///
     ///     let db_from_path = PathBuf::from("cool.gddb");
-    ///     let db_from: Database<ExampleStruct> = Database::auto_from(db_from_path, false).unwrap(); // automatically load it
+    ///     let db_from: Database<Record> = Database::auto_from(db_from_path, false).unwrap(); // automatically load it
     ///
     ///     let db_new_path = PathBuf::from("xyz.gddb");
-    ///     let db_new: Database<ExampleStruct> = Database::auto_from(db_new_path, false).unwrap(); // automatically create new as "xyz" doesn't exist
+    ///     let db_new: Database<Record> = Database::auto_from(db_new_path, false).unwrap(); // automatically create new as "xyz" doesn't exist
     /// }
     /// ```
     pub fn auto_from(path: impl Into<PathBuf>, strict_dupes: bool) -> Result<Self, DatabaseError> {
@@ -157,34 +175,6 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
         }
     }
 
-    /// Adds a new item to the in-memory database.
-    ///
-    /// If this is the first item added to the database, please ensure it's the
-    /// only type you'd like to add. Due to generics, the first item you add
-    /// will be set as the type to use (unless removed).
-    pub fn create(&mut self, item: T) -> Result<(), DatabaseError> {
-        if self.strict_dupes {
-            if self.items.contains(&item) {
-                return Err(DatabaseError::DupeFound);
-            }
-        }
-
-        self.items.insert(item);
-        return Ok(());
-    }
-
-    /// Replaces an item inside of the database with another
-    /// item, used for updating/replacing items easily.
-    ///
-    /// [Database::find] can be used in conjunction to find and replace
-    /// values individually if needed.
-    pub fn update(&mut self, item: &T, new: T) -> Result<(), DatabaseError> {
-        self.destroy(item)?;
-        self.create(new)?;
-
-        Ok(())
-    }
-
     /// Removes an item from the database.
     ///
     /// See [Database::update] if you'd like to update/replace an item easily,
@@ -194,7 +184,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///
     /// Will return [DatabaseError::ItemNotFound] if the item that is attempting
     /// to be deleted was not found.
-    pub fn destroy(&mut self, item: &T) -> Result<(), DatabaseError> {
+    pub fn destroy(&mut self, item: &Record) -> Result<(), DatabaseError> {
         if self.items.remove(item) {
             Ok(())
         } else {
@@ -253,11 +243,11 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     assert_eq!(results.unwrap(), &my_struct);
     /// }
     /// ```
-    pub fn find<Q: PartialEq, V: Fn(&T) -> &Q>(
+    pub fn find<Q: PartialEq, V: Fn(&Record) -> &Q>(
         &self,
         value: V,
         query: Q,
-    ) -> Result<&T, DatabaseError> {
+    ) -> Result<&Record, DatabaseError> {
         for item in self.items.iter() {
             if value(item) == &query {
                 return Ok(item);
@@ -303,12 +293,12 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     assert_eq!(results.unwrap().len(), 2);
     /// }
     /// ```
-    pub fn query<Q: PartialEq, V: Fn(&T) -> &Q>(
+    pub fn query<Q: PartialEq, V: Fn(&Record) -> &Q>(
         &self,
         value: V,
         query: Q,
-    ) -> Result<Vec<&T>, DatabaseError> {
-        let mut items: Vec<&T> = vec![];
+    ) -> Result<Vec<&Record>, DatabaseError> {
+        let mut items: Vec<&Record> = vec![];
         for item in self.items.iter() {
             if value(item) == &query {
                 items.push(item);
@@ -347,7 +337,7 @@ impl<T: hash::Hash + Eq + Serialize + DeserializeOwned> Database<T> {
     ///     assert_eq!(db.contains(&exp_struct), true);
     /// }
     /// ```
-    pub fn contains(&self, query: &T) -> bool {
+    pub fn contains(&self, query: &Record) -> bool {
         self.items.contains(query)
     }
 
@@ -419,22 +409,12 @@ fn get_stream_from_path(path: PathBuf) -> Result<Vec<u8>, DatabaseError> {
 mod tests {
     use super::*;
 
-    /// A dummy struct to use inside of tests
-    #[derive(Clone, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
-    struct DemoStruct {
-        name: String,
-        age: i32,
-    }
-
     /// Tests addition to in-memory db
     #[test]
     fn item_add() -> Result<(), DatabaseError> {
         let mut my_db = Database::new("Adding test", None, true);
 
-        my_db.create(DemoStruct {
-            name: String::from("John"),
-            age: 16,
-        })?;
+        my_db.create(Record::new("Test".into()))?;
 
         Ok(())
     }
@@ -444,14 +424,28 @@ mod tests {
     fn item_remove() -> Result<(), DatabaseError> {
         let mut my_db = Database::new("Removal test", None, true);
 
-        let testing_struct = DemoStruct {
-            name: String::from("Xander"),
-            age: 33,
-        };
+        let testing_struct = Record::new("Testing".into());
 
         my_db.create(testing_struct.clone())?;
         my_db.destroy(&testing_struct)?;
 
+        Ok(())
+    }
+
+    #[test]
+    fn item_update() -> Result<(), DatabaseError> {
+        let mut db: Database<Record> = Database::new("Update test", None, true);
+
+        let testing_struct = Record::new("Test".into());
+
+        db.create(testing_struct.clone())?;
+
+        let mut updated_struct = testing_struct.clone();
+        updated_struct.attributes = "Testing".into();
+        db.update(&testing_struct, updated_struct)?;
+        let record = db.find(|f| &f.uuid, testing_struct.uuid)?;
+        let attributes: String = "Testing".into();
+        assert_eq!(attributes, record.attributes);
         Ok(())
     }
 
@@ -463,14 +457,8 @@ mod tests {
             true,
         );
 
-        my_db.create(DemoStruct {
-            name: String::from("Xander"),
-            age: 33,
-        })?;
-        my_db.create(DemoStruct {
-            name: String::from("John"),
-            age: 54,
-        })?;
+        my_db.create(Record::new("Testing".into()))?;
+        my_db.create(Record::new("Testing".into()))?;
 
         my_db.dump_db()?;
 
@@ -485,45 +473,22 @@ mod tests {
             true,
         );
 
+        let staging = Record::new("Staging".into());
+
         my_db
-            .create(DemoStruct {
-                name: String::from("Rimmer"),
-                age: 5,
-            })
+            .create(Record::new("Testing".into()))
             .unwrap();
         my_db
-            .create(DemoStruct {
-                name: String::from("Cat"),
-                age: 10,
-            })
+            .create(staging.clone())
             .unwrap();
         my_db
-            .create(DemoStruct {
-                name: String::from("Kryten"),
-                age: 3000,
-            })
-            .unwrap();
-        my_db
-            .create(DemoStruct {
-                name: String::from("Lister"),
-                age: 62,
-            })
+            .create(Record::new("Production".into()))
             .unwrap();
 
         assert_eq!(
-            my_db.find(|f| &f.age, 62).unwrap(),
-            &DemoStruct {
-                name: String::from("Lister"),
-                age: 62,
-            }
-        ); // Finds "Lister" by searching [DemoStruct::age]
-        assert_eq!(
-            my_db.find(|f| &f.name, String::from("Cat")).unwrap(),
-            &DemoStruct {
-                name: String::from("Cat"),
-                age: 10,
-            }
-        ); // Finds "Cat" by searching [DemoStruct::name]
+            my_db.find(|f| &f.model, "Staging".into()).unwrap(),
+            &staging
+        ); // Finds "Staging" by searching [DemoStruct::model]
     }
 
     /// Tests [Database::query]
@@ -536,44 +501,22 @@ mod tests {
         );
 
         my_db
-            .create(DemoStruct {
-                name: String::from("Rimmer"),
-                age: 5,
-            })
+            .create(Record::new("Testing".into()))
             .unwrap();
         my_db
-            .create(DemoStruct {
-                name: String::from("Cat"),
-                age: 10,
-            })
+            .create(Record::new("Testing".into()))
             .unwrap();
         my_db
-            .create(DemoStruct {
-                name: String::from("Kryten"),
-                age: 3000,
-            })
-            .unwrap();
-        my_db
-            .create(DemoStruct {
-                name: String::from("Lister"),
-                age: 62,
-            })
-            .unwrap();
-
-        my_db
-            .create(DemoStruct {
-                name: String::from("Lister"),
-                age: 64,
-            })
+            .create(Record::new("Staging".into()))
             .unwrap();
 
         assert_eq!(
             my_db
-                .query(|f| &f.name, String::from("Lister"))
+                .query(|f| &f.model, "Testing".into())
                 .unwrap()
                 .len(),
             2
-        ); // Finds "Lister" by searching [DemoStruct::name]
+        ); // Finds "Testing" by searching [DemoStruct::model]
     }
 
     /// Tests a [Database::from] method call
@@ -585,16 +528,13 @@ mod tests {
             false,
         );
 
-        let demo_mock = DemoStruct {
-            name: String::from("Xander"),
-            age: 33,
-        };
+        let demo_mock = Record::new("Testing".into());
 
         my_db.create(demo_mock.clone()).unwrap();
 
         my_db.dump_db()?;
 
-        let db: Database<DemoStruct> = Database::from(PathBuf::from("test.gddb"))?;
+        let db: Database<Record> = Database::from(PathBuf::from("test.gddb"))?;
         assert_eq!(db.label, String::from("Dumping test"));
 
         Ok(())
@@ -604,10 +544,7 @@ mod tests {
     /// [Database::contains].
     #[test]
     fn db_contains() {
-        let exp_struct = DemoStruct {
-            name: String::from("Xander"),
-            age: 33,
-        };
+        let exp_struct = Record::new("Testing".into());
 
         let mut db = Database::new(String::from("Contains example"), None, false);
         db.create(exp_struct.clone()).unwrap();
@@ -618,29 +555,26 @@ mod tests {
     /// already existing ones; an all-round test of its purpose.
     #[test]
     fn auto_from_creation() {
-        let _dummy_db: Database<DemoStruct> =
+        let _dummy_db: Database<Record> =
             Database::new(String::from("alreadyexists"), None, false);
 
         let from_db_path = PathBuf::from("alreadyexists.gddb");
-        let _from_db: Database<DemoStruct> = Database::auto_from(from_db_path, false).unwrap();
+        let _from_db: Database<Record> = Database::auto_from(from_db_path, false).unwrap();
 
         let new_db_path = PathBuf::from("nonexistant.gddb");
-        let _net_db: Database<DemoStruct> = Database::auto_from(new_db_path, false).unwrap();
+        let _net_db: Database<Record> = Database::auto_from(new_db_path, false).unwrap();
     }
 
     /// Tests [Database::len] returns the number of database entries
     #[test]
     fn len() {
-        let mut db: Database<DemoStruct> = Database::new(
+        let mut db: Database<Record> = Database::new(
             String::from("Query test"),
             Some(PathBuf::from("test.gddb")),
             true,
         );
 
-        let demo_mock = DemoStruct {
-            name: String::from("Xander"),
-            age: 33,
-        };
+        let demo_mock =  Record::new("Testing".into());
 
         db.create(demo_mock.clone()).unwrap();
 
