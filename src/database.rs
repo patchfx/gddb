@@ -1,10 +1,34 @@
 use crate::prelude::*;
+use core::fmt::Display;
 use hashbrown::HashSet;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::fs::File;
 use std::hash;
 use std::io::prelude::*;
 use std::path::PathBuf;
+use uuid::Uuid;
+
+pub trait RecordCheck: PartialEq + Default + Display {}
+impl<T> RecordCheck for T where T: PartialEq + Default + Display {}
+
+#[derive(Clone, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct Record {
+    pub uuid: String,
+    pub model: String,
+    pub attributes: String,
+}
+
+impl Record {
+    pub fn new(model: String) -> Self {
+        let uuid = Uuid::new_v4().to_string();
+
+        Self {
+            uuid: uuid.clone(),
+            model,
+            attributes: "".into(),
+        }
+    }
+}
 
 /// The primary database structure, allowing storage of a generic type with
 /// dumping/saving options avalible.
@@ -38,7 +62,7 @@ pub struct Database<T: hash::Hash + Eq> {
     pub items: HashSet<T>,
 }
 
-impl<Record: hash::Hash + Eq + Serialize + DeserializeOwned>  Database<Record> {
+impl<Record: hash::Hash + Eq + Serialize + DeserializeOwned> Database<Record> {
     /// Creates a new database instance from given parameters.
     ///
     /// - To add a first item, use [Database::create].
@@ -55,7 +79,6 @@ impl<Record: hash::Hash + Eq + Serialize + DeserializeOwned>  Database<Record> {
             items: HashSet::new(),
         }
     }
-
 
     /// Creates a database from a `.gddb` file.
     ///
@@ -243,13 +266,13 @@ impl<Record: hash::Hash + Eq + Serialize + DeserializeOwned>  Database<Record> {
     ///     assert_eq!(results.unwrap(), &my_struct);
     /// }
     /// ```
-    pub fn find<Q: PartialEq, V: Fn(&Record) -> &Q>(
+    pub fn find<Q: RecordCheck, V: Fn(&Record) -> &Q>(
         &self,
         value: V,
         query: Q,
     ) -> Result<&Record, DatabaseError> {
         for item in self.items.iter() {
-            if value(item) == &query {
+            if value(item).eq(&query) {
                 return Ok(item);
             }
         }
@@ -475,15 +498,9 @@ mod tests {
 
         let staging = Record::new("Staging".into());
 
-        my_db
-            .create(Record::new("Testing".into()))
-            .unwrap();
-        my_db
-            .create(staging.clone())
-            .unwrap();
-        my_db
-            .create(Record::new("Production".into()))
-            .unwrap();
+        my_db.create(Record::new("Testing".into())).unwrap();
+        my_db.create(staging.clone()).unwrap();
+        my_db.create(Record::new("Production".into())).unwrap();
 
         assert_eq!(
             my_db.find(|f| &f.model, "Staging".into()).unwrap(),
@@ -500,21 +517,12 @@ mod tests {
             false,
         );
 
-        my_db
-            .create(Record::new("Testing".into()))
-            .unwrap();
-        my_db
-            .create(Record::new("Testing".into()))
-            .unwrap();
-        my_db
-            .create(Record::new("Staging".into()))
-            .unwrap();
+        my_db.create(Record::new("Testing".into())).unwrap();
+        my_db.create(Record::new("Testing".into())).unwrap();
+        my_db.create(Record::new("Staging".into())).unwrap();
 
         assert_eq!(
-            my_db
-                .query(|f| &f.model, "Testing".into())
-                .unwrap()
-                .len(),
+            my_db.query(|f| &f.model, "Testing".into()).unwrap().len(),
             2
         ); // Finds "Testing" by searching [DemoStruct::model]
     }
@@ -555,8 +563,7 @@ mod tests {
     /// already existing ones; an all-round test of its purpose.
     #[test]
     fn auto_from_creation() {
-        let _dummy_db: Database<Record> =
-            Database::new(String::from("alreadyexists"), None, false);
+        let _dummy_db: Database<Record> = Database::new(String::from("alreadyexists"), None, false);
 
         let from_db_path = PathBuf::from("alreadyexists.gddb");
         let _from_db: Database<Record> = Database::auto_from(from_db_path, false).unwrap();
@@ -574,7 +581,7 @@ mod tests {
             true,
         );
 
-        let demo_mock =  Record::new("Testing".into());
+        let demo_mock = Record::new("Testing".into());
 
         db.create(demo_mock.clone()).unwrap();
 
