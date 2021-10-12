@@ -1,27 +1,6 @@
 use crate::prelude::*;
 use gdnative::prelude::*;
 use hashbrown::HashMap;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
-#[derive(Clone, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct Record {
-    pub uuid: String,
-    pub model: String,
-    pub attributes: String,
-}
-
-impl Record {
-    pub fn new(model: String) -> Self {
-        let uuid = Uuid::new_v4().to_string();
-
-        Self {
-            uuid: uuid.clone(),
-            model,
-            attributes: "".into(),
-        }
-    }
-}
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -38,8 +17,8 @@ impl GDDB {
 
     #[export]
     pub fn create(&mut self, _owner: &Node, model: String, attributes: Dictionary) -> String {
-        let uuid = Uuid::new_v4().to_string();
         let mut record = Record::new(model);
+        let uuid = record.uuid.clone();
         record.attributes = attributes.to_json().to_string();
 
         self.storage.create(record).unwrap();
