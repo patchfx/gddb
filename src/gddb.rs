@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use gdnative::prelude::*;
-use hashbrown::HashMap;
 
 #[derive(NativeClass)]
 #[inherit(Node)]
@@ -29,14 +28,12 @@ impl GDDB {
     #[export]
     pub fn find(&mut self, _owner: &Node, uuid: String) -> Dictionary<Unique> {
         let record = self.storage.find(|f| &f.uuid, uuid).unwrap();
-        let json: HashMap<String, String> =
-            serde_json::from_str(&record.attributes.clone()).unwrap();
 
         let data = Dictionary::new();
 
-        for (key, value) in json {
-            data.insert(key, value);
-        }
+        data.insert("uuid", record.uuid.clone());
+        data.insert("model", record.model.clone());
+        data.insert("attributes", record.attributes.clone());
 
         data
     }
