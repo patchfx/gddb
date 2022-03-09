@@ -26,7 +26,7 @@ impl GDDB {
     }
 
     #[export]
-    pub fn find(&mut self, _owner: &Node, uuid: String) -> Dictionary<Unique> {
+    pub fn find(&mut self, _owner: &Node, uuid: String) -> GodotString {
         let record = self.storage.find(|f| &f.uuid, uuid).unwrap();
 
         let data = Dictionary::new();
@@ -35,6 +35,21 @@ impl GDDB {
         data.insert("model", record.model.clone());
         data.insert("attributes", record.attributes.clone());
 
-        data
+        data.to_json()
+    }
+
+    #[export]
+    pub fn update(&mut self, _owner: &Node, uuid: String, model: String, attributes: String) {
+        let new = Record {
+            uuid,
+            model,
+            attributes,
+        };
+
+        let uuid = new.uuid.clone();
+        let original = self.storage.find(|f| &f.uuid, uuid).unwrap().clone();
+
+        self.storage.update(&original, new.clone()).unwrap();
+        godot_print!("Updated Record!!!");
     }
 }

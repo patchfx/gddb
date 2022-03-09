@@ -72,12 +72,24 @@
 pub mod database;
 pub mod error;
 pub mod gddb;
+pub mod record;
 use gdnative::prelude::*;
 
 mod prelude {
     pub use crate::database::*;
     pub use crate::error::*;
     pub use crate::gddb::*;
+    pub use crate::record::*;
+
+    pub use core::fmt::Display;
+    pub use hashbrown::HashSet;
+    pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
+    pub use snailquote::unescape;
+    pub use std::fs::File;
+    pub use std::hash;
+    pub use std::io::prelude::*;
+    pub use std::path::PathBuf;
+    pub use uuid::Uuid;
 }
 
 use prelude::*;

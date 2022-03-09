@@ -1,34 +1,4 @@
 use crate::prelude::*;
-use core::fmt::Display;
-use hashbrown::HashSet;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::fs::File;
-use std::hash;
-use std::io::prelude::*;
-use std::path::PathBuf;
-use uuid::Uuid;
-
-pub trait RecordCheck: PartialEq + Default + Display {}
-impl<T> RecordCheck for T where T: PartialEq + Default + Display {}
-
-#[derive(Clone, Hash, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct Record {
-    pub uuid: String,
-    pub model: String,
-    pub attributes: String,
-}
-
-impl Record {
-    pub fn new(model: String) -> Self {
-        let uuid = Uuid::new_v4().to_string();
-
-        Self {
-            uuid: uuid.clone(),
-            model,
-            attributes: "".into(),
-        }
-    }
-}
 
 /// The primary database structure, allowing storage of a generic type with
 /// dumping/saving options avalible.
