@@ -57,17 +57,17 @@
 //!
 //! Some commonly-used operations for the [Database] structure.
 //!
-//! | Operation                               | Implamentation          |
-//! |-----------------------------------------|-------------------------|
-//! | Create database                         | [Database::new]         |
-//! | Create database from file               | [Database::from]        |
-//! | Load database or create if non-existant | [Database::auto_from]   |
-//! | Query all matching items                | [Database::query]       |
-//! | Query for item                          | [Database::find]  |
-//! | Contains specific item                  | [Database::contains]    |
-//! | Update/replace item                     | [Database::update] |
-//! | Delete item                             | [Database::destroy] |
-//! | Dump database                           | [Database::dump_db]     |
+//! | Operation                               | Implamentation        |
+//! |-----------------------------------------|-----------------------|
+//! | Create database                         | [Database::new]       |
+//! | Create database from file               | [Database::from]      |
+//! | Load database or create if non-existant | [Database::auto_from] |
+//! | Query all matching items                | [Database::query]     |
+//! | Query for item                          | [Database::find]      |
+//! | Contains specific item                  | [Database::contains]  |
+//! | Update/replace item                     | [Database::update]    |
+//! | Delete item                             | [Database::destroy]   |
+//! | Dump database                           | [Database::dump_db]   |
 
 pub mod database;
 pub mod error;
@@ -84,7 +84,6 @@ mod prelude {
     pub use core::fmt::Display;
     pub use hashbrown::HashSet;
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
-    pub use snailquote::unescape;
     pub use std::fs::File;
     pub use std::hash;
     pub use std::io::prelude::*;

@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use gdnative::prelude::*;
 
+/// The primary Godot interface to the database.
 #[derive(NativeClass)]
 #[inherit(Node)]
 pub struct GDDB {
@@ -14,6 +15,7 @@ impl GDDB {
         Self { storage: db }
     }
 
+    // Creates a database record
     #[export]
     pub fn create(&mut self, _owner: &Node, model: String, attributes: Dictionary) -> String {
         let mut record = Record::new(model);
@@ -25,6 +27,7 @@ impl GDDB {
         uuid
     }
 
+    // Finds a database record given a uuid
     #[export]
     pub fn find(&mut self, _owner: &Node, uuid: String) -> GodotString {
         let record = self.storage.find(|f| &f.uuid, uuid).unwrap();
@@ -38,6 +41,7 @@ impl GDDB {
         data.to_json()
     }
 
+    // Updates a record
     #[export]
     pub fn update(&mut self, _owner: &Node, uuid: String, model: String, attributes: String) {
         let new = Record {
@@ -50,6 +54,5 @@ impl GDDB {
         let original = self.storage.find(|f| &f.uuid, uuid).unwrap().clone();
 
         self.storage.update(&original, new.clone()).unwrap();
-        godot_print!("Updated Record!!!");
     }
 }
