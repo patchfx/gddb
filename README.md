@@ -3,7 +3,7 @@
 [![crates.io](https://img.shields.io/crates/v/gddb.svg)](https://crates.io/crates/gddb)
 [![Cross-compile](https://github.com/patchfx/gddb/actions/workflows/cross-compile.yml/badge.svg)](https://github.com/patchfx/gddb/actions/workflows/cross-compile.yml)
 [![Documentation](https://docs.rs/gddb/badge.svg)](https://docs.rs/gddb)
-[![Version](https://img.shields.io/badge/rustc-1.51+-lightgray.svg)](https://blog.rust-lang.org/2021/03/25/Rust-1.51.0.html)
+[![Version](https://img.shields.io/badge/rustc-1.56+-lightgray.svg)](https://blog.rust-lang.org/2021/11/01/Rust-1.56.1.html)
 ![License](https://img.shields.io/crates/l/gddb.svg)
 
 GDDB is a superfast in-memory database designed for use in Godot.
