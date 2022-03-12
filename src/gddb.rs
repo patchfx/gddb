@@ -30,7 +30,10 @@ impl GDDB {
     // Finds a database record given a uuid
     #[export]
     pub fn find(&mut self, _owner: &Node, uuid: String) -> GodotString {
-        let record = self.storage.find(|f| &f.uuid, uuid).unwrap();
+        let record = self
+            .storage
+            .find(|f| &f.uuid, uuid)
+            .expect("Could not find record");
 
         let data = Dictionary::new();
 
@@ -53,6 +56,20 @@ impl GDDB {
         let uuid = new.uuid.clone();
         let original = self.storage.find(|f| &f.uuid, uuid).unwrap().clone();
 
-        self.storage.update(&original, new.clone()).unwrap();
+        self.storage
+            .update(&original, new.clone())
+            .expect("Cannot update record");
+    }
+
+    // Removes a record
+    #[export]
+    pub fn destroy(&mut self, _owner: &Node, uuid: String, model: String, attributes: String) {
+        let record = Record {
+            uuid,
+            model,
+            attributes,
+        };
+
+        self.storage.destroy(&record).expect("Cannot remove record");
     }
 }

@@ -42,7 +42,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! gddb = "0.1.0"
+//! gddb = "0.3.0"
 //! ```
 //! # Implementation notes
 //!
