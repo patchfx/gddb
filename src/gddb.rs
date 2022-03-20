@@ -53,7 +53,11 @@ impl GDDB {
         };
 
         let uuid = new.uuid.clone();
-        let original = self.storage.find(|f| &f.uuid, uuid).unwrap().clone();
+        let original = self
+            .storage
+            .find(|f| &f.uuid, uuid)
+            .expect("Could not find record to update")
+            .clone();
 
         self.storage
             .update(&original, new.clone())

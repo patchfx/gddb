@@ -15,7 +15,7 @@ impl Record {
         let uuid = Uuid::new_v4().to_string();
 
         Self {
-            uuid: uuid.clone(),
+            uuid,
             model,
             attributes: "".into(),
         }
