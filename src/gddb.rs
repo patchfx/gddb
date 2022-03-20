@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use gdnative::prelude::*;
 
 /// The primary Godot interface to the database.
 #[derive(NativeClass)]

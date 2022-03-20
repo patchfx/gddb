@@ -82,6 +82,7 @@ mod prelude {
     pub use crate::record::*;
 
     pub use core::fmt::Display;
+    pub use gdnative::prelude::*;
     pub use hashbrown::HashSet;
     pub use serde::{de::DeserializeOwned, Deserialize, Serialize};
     pub use std::fs::File;
