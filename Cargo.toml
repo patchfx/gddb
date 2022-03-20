@@ -1,7 +1,7 @@
 [package]
 name = "gddb"
 description = "GDDB is a superfast in-memory database designed for use in Godot."
-version = "0.3.0"
+version = "0.3.1"
 repository = "https://github.com/patchfx/gddb"
 license = "MIT"
 readme = "README.md"
