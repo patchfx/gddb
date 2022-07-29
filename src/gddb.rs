@@ -75,4 +75,21 @@ impl GDDB {
 
         self.storage.destroy(&record).expect("Cannot remove record");
     }
+
+    #[export]
+    pub fn all(&self, _owner: &Node) -> Vec<GodotString> {
+        let mut records = vec![];
+
+        for record in self.storage.items.iter() {
+            let data = Dictionary::new();
+
+            data.insert("uuid", record.uuid.clone());
+            data.insert("model", record.model.clone());
+            data.insert("attributes", record.attributes.clone());
+
+            records.push(data.to_json());
+        }
+
+        records
+    }
 }
