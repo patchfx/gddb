@@ -1,4 +1,4 @@
-# GDDB
+# _GDDB_ [EXPERIMENTAL GODOT4 BRANCH]
 
 [![crates.io](https://img.shields.io/crates/v/gddb.svg)](https://crates.io/crates/gddb)
 [![Cross-compile](https://github.com/patchfx/gddb/actions/workflows/cross-compile.yml/badge.svg)](https://github.com/patchfx/gddb/actions/workflows/cross-compile.yml)
@@ -19,14 +19,14 @@ GDDB started as a fork of [TinyDB](https://github.com/Owez/tinydb) with added fu
 
 ## Installation
 
-- git clone https://github.com/patchfx/gddb.git
-- cd gddb
-- cargo build
-- Copy the libgddb.(dll|so) to your Godot project
+- `git clone https://github.com/patchfx/gddb.git`
+- `cd gddb`
+- `cargo build`
+- Copy the `libgddb.(dll|so)` to your Godot project
 - Create a new GDNativeLibrary and link to the lib
-- Create a new GDNativeScript filed with a class name of 'GDDB'
+- Create a new GDNativeScript filed with a class name of `GDDB`
 - Attach the GDNativeLibrary to the GDNativeScript
-- Autoload the GDNativeScript
+- Autoload the `GDDB` GDNativeScript
 
 ## Example
 
@@ -35,15 +35,15 @@ extends Node
 
 func _ready():
 	var data = { "name": "Joe Bloggs" }
-	var player_uuid = Database.create("Player", data)
+	var player_uuid = GDDB.create("Player", data)
 	print(player_uuid)
 
-	var record = Database.find(player_uuid)
+	var record = GDDB.find(player_uuid)
 	print(record.name)
 
 	record.name = "John Doe"
-	Database.update(record.uuid, record.model, record.attributes)
+	GDDB.update(record.uuid, record.model, record.attributes)
 
-	var updated = Database.find(player_uuid)
+	var updated = GDDB.find(player_uuid)
 	print(updated.name)
 ```
